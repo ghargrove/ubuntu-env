@@ -1,6 +1,15 @@
 #!/usr/bin/env bash
 user=$1
 pass=$2
+# Set ruby options
+ruby_installation_method=$3
+rb_version=$4
+if [ -z $ruby_installation_method ]; then
+  read -p "> Choose ruby install method? (source, rvm , rbevn) [source]: " ruby_installation_method
+fi
+if [ -z $rb_version ]; then
+    read -p "What version of ruby would you like to install? (2.1.0): " rb_version    
+fi
 # Setup a user
 sudo useradd -d /home/$user -m -s /bin/bash -G admin $user
 echo "$user:$pass" | sudo chpasswd
@@ -13,11 +22,6 @@ echo "deb http://apt.postgresql.org/pub/repos/apt/ precise-pgdg main" | sudo tee
 wget -q -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
 sudo apt-get update
 sudo apt-get install -y postgresql-9.3 libpq-dev
-# Determine how they want to install ruby
-read -p "> Choose ruby install method? (source, rvm , rbevn) [source]: " ruby_installation_type
-if [ -z $ruby_installation_type ]; then
-    ruby_installation_type="source"
-fi
 # Packages retrieved by rvm
 sudo apt-get update
 sudo apt-get install -y gawk libsqlite3-dev sqlite3 libgdbm-dev libncurses5-dev bison libffi-dev
@@ -34,11 +38,6 @@ if [ $ruby_installation_method = "source" ]; then
 elif [ $ruby_installation_method = "rvm" ]; then
     gpg --keyserver hkp://keys.gnupg.net --recv-keys D39DC0E3
     \curl -sSL https://get.rvm.io | bash -s stable
-    # Determine what version of ruby the user would like
-    read -p "What version of ruby would you like to install? (2.1.0): " rb_version
-    if [ -z $rb_version ]; then
-        rb_version="2.1.0"
-    fi
     source "$HOME/.rvm/scripts/rvm"
     rvm install $rb_version
     rvm use $rb_version --default
@@ -50,11 +49,6 @@ elif [ $ruby_installation_method = "rbenv" ]; then
     # Install ruby-build
     git clone https://github.com/sstephenson/ruby-build.git ~/.rbenv/plugins/ruby-build
     source "$HOME/.bash_profile"
-    # Determine what version of ruby the user would like                                                 
-    read -p "What version of ruby would you like to install? (2.1.0): " rb_version
-    if [ -z $rb_version ]; then
-        rb_version="2.1.0"
-    fi
     rbenv install $rb_version
     rbenv global $rb_version
 fi
