@@ -13,17 +13,55 @@ echo "deb http://apt.postgresql.org/pub/repos/apt/ precise-pgdg main" | sudo tee
 wget -q -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
 sudo apt-get update
 sudo apt-get install -y postgresql-9.3 libpq-dev
+# Determine how they want to install ruby
+read -p "> Choose ruby install method? (source, rvm , rbevn) [source]: " ruby_installation_type
+if [ -z $ruby_installation_type ]; then
+    ruby_installation_type="source"
+fi
 # Packages retrieved by rvm
 sudo apt-get update
 sudo apt-get install -y gawk libsqlite3-dev sqlite3 libgdbm-dev libncurses5-dev bison libffi-dev
-# Install ruby from source
-wget -q http://cache.ruby-lang.org/pub/ruby/2.0/ruby-2.0.0-p598.tar.gz
-tar xzvf ruby-2.0.0-p598.tar.gz
-rm ruby-2.0.0-p598.tar.gz
-cd ruby-2.0.0-p598
-./configure
-make
-sudo make install
+# Determine which install method to use
+if [ $ruby_installation_method = "source" ]; then
+    # Install ruby from source
+    wget -q http://cache.ruby-lang.org/pub/ruby/2.0/ruby-2.0.0-p598.tar.gz
+    tar xzvf ruby-2.0.0-p598.tar.gz
+    rm ruby-2.0.0-p598.tar.gz
+    cd ruby-2.0.0-p598
+    ./configure
+    make
+    sudo make install
+elif [ $ruby_installation_method = "rvm" ]; then
+    gpg --keyserver hkp://keys.gnupg.net --recv-keys D39DC0E3
+    \curl -sSL https://get.rvm.io | bash -s stable
+    # Determine what version of ruby the user would like
+    read -p "What version of ruby would you like to install? (2.1.0): " rb_version
+    if [ -z $rb_version ]; then
+        rb_version="2.1.0"
+    fi
+    source "$HOME/.rvm/scripts/rvm"
+    rvm install $rb_version
+    rvm use $rb_version --default
+elif [ $ruby_installation_method = "rbenv" ]; then
+    # Install rbenv
+    git clone https://github.com/sstephenson/rbenv.git ~/.rbenv
+    echo 'export PATH="$HOME/.rbenv/bin:$PATH"' >> ~/.bash_profile
+    echo 'eval "$(rbenv init -)"' >> ~/.bash_profile
+    # Install ruby-build
+    git clone https://github.com/sstephenson/ruby-build.git ~/.rbenv/plugins/ruby-build
+    source "$HOME/.bash_profile"
+    # Determine what version of ruby the user would like                                                 
+    read -p "What version of ruby would you like to install? (2.1.0): " rb_version
+    if [ -z $rb_version ]; then
+        rb_version="2.1.0"
+    fi
+    rbenv install $rb_version
+    rbenv global $rb_version
+fi
+# Install NodeJS. Rails requires a JS runtime
+curl -sL https://deb.nodesource.com/setup | sudo bash -
+sudo apt-get update
+sudo apt-get install -y nodejs
 # Install Phusion Passenger from apt repository
 sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 561F9B9CAC40B2F7
 sudo apt-get update
